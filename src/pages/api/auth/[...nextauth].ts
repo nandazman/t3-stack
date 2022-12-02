@@ -8,7 +8,24 @@ import { prisma } from "../../../server/db/client";
 
 export const authOptions: NextAuthOptions = {
   // Include user.id on session
+  pages: {
+    signIn: "/auth/signin",
+  },
+  theme: {
+    colorScheme: "auto", // "auto" | "dark" | "light"
+    brandColor: "", // Hex color code
+    logo: "", // Absolute URL to image
+    buttonText: "", // Hex color code
+  },
   callbacks: {
+    signIn({ user, account, profile, email, credentials }) {
+      console.log({ user, account, profile, email, credentials });
+      return true;
+    },
+    redirect({ baseUrl }) {
+      console.log({ baseUrl });
+      return baseUrl;
+    },
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
