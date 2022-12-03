@@ -13,4 +13,7 @@ export const exampleRouter = router({
   getAll: publicProcedure.query(({ ctx }) => {
     return ctx.prisma.example.findMany();
   }),
+  insert: publicProcedure.mutation(({ ctx }) => {
+    return ctx.prisma.example.create({ data: {}})
+  }),
 });

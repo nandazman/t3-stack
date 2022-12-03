@@ -4,10 +4,17 @@ import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
+import { type Example } from "@prisma/client";
+
+interface AuthShowcaseProps {
+  data: Example[] | undefined
+}
 
 const Home: NextPage = () => {
   const hello = trpc.example.hello.useQuery({ text: "from tRPC Xutopia" });
-
+  const data = trpc.example.getAll.useQuery();
+  
+  const { mutateAsync } = trpc.example.insert.useMutation();
   return (
     <>
       <Head>
@@ -18,7 +25,14 @@ const Home: NextPage = () => {
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
+            Create{" "}
+            <span
+              className="text-[hsl(280,100%,70%)]"
+              onClick={() => mutateAsync()}
+            >
+              T3
+            </span>{" "}
+            App
           </h1>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
             <Link
@@ -46,7 +60,7 @@ const Home: NextPage = () => {
             <p className="text-2xl text-white">
               {hello.data ? hello.data.greeting : "Loading tRPC query..."}
             </p>
-            <AuthShowcase />
+            <AuthShowcase data={data.data} />
           </div>
         </div>
       </main>
@@ -56,16 +70,25 @@ const Home: NextPage = () => {
 
 export default Home;
 
-const AuthShowcase: React.FC = () => {
+const AuthShowcase: React.FC<AuthShowcaseProps> = ({ data }) => {
   const { data: sessionData } = useSession();
 
   const { data: secretMessage } = trpc.auth.getSecretMessage.useQuery(
     undefined, // no input
-    { enabled: sessionData?.user !== undefined },
+    { enabled: sessionData?.user !== undefined }
   );
+
+  const { mutateAsync } = trpc.example.insert.useMutation({
+    onSuccess() {
+      utils.example.getAll.invalidate()
+    }
+  });
+
+  const utils = trpc.useContext();
 
   return (
     <div className="flex flex-col items-center justify-center gap-4">
+      <p className="text-center text-2xl text-white">{data?.length} Data</p>
       <p className="text-center text-2xl text-white">
         {sessionData && <span>Logged in as {sessionData.user?.name}</span>}
         {secretMessage && <span> - {secretMessage}</span>}
@@ -76,6 +99,14 @@ const AuthShowcase: React.FC = () => {
       >
         {sessionData ? "Sign out" : "Sign in"}
       </button>
+      {sessionData && (
+        <button
+          className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
+          onClick={() => mutateAsync()}
+        >
+          Generate Data
+        </button>
+      )}
     </div>
   );
 };
